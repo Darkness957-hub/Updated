@@ -1,0 +1,55 @@
+-- Textbox for Speed Input with Limit
+local moveSpeed = 50  -- Default Speed
+KillingCheats:CreateTextbox("Speed (Limit 10-30)", function(text)
+    local speed = tonumber(text)
+    if speed then
+        moveSpeed = math.clamp(speed, 10, 30)  -- Limit speed between 10 and 200
+        print("Speed Set To:", moveSpeed)
+    end
+end)
+
+-- Auto Collect Heart Toggle
+local AutoFarmEnabled = false
+
+KillingCheats:CreateToggle("Auto Collect Heart", function(value)
+    AutoFarmEnabled = value
+    print("Auto Collect Heart is now", AutoFarmEnabled and "Enabled" or "Disabled")
+
+    if AutoFarmEnabled then
+        task.spawn(function()
+            while AutoFarmEnabled do
+                local character = Players.LocalPlayer.Character
+                if character and character:FindFirstChild("HumanoidRootPart") then
+                    local heartFolder = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Interactable") and workspace.Map.Interactable:FindFirstChild("Hearts")
+                    
+                    if heartFolder then
+                        local hearts = heartFolder:GetChildren()
+                        local closestHeart = nil
+                        local closestDistance = math.huge
+                        
+                        for _, heart in ipairs(hearts) do
+                            local distance = (character.HumanoidRootPart.Position - heart.Position).magnitude
+                            if distance < closestDistance then
+                                closestDistance = distance
+                                closestHeart = heart
+                            end
+                        end
+
+                        if closestHeart then
+                            local direction = (closestHeart.Position - character.HumanoidRootPart.Position).unit
+                            local maxDistance = 1000  -- Limit movement range
+                            local distanceTraveled = 0
+                            
+                            while AutoFarmEnabled and (character.HumanoidRootPart.Position - closestHeart.Position).magnitude > 2 do
+                                if distanceTraveled >= maxDistance then break end
+                                character.HumanoidRootPart.CFrame = character.HumanoidRootPart.CFrame + direction * moveSpeed * RunService.Heartbeat:Wait()
+                                distanceTraveled = distanceTraveled + moveSpeed
+                            end
+                        end
+                    end
+                end
+                wait(0.1)  -- Prevents script lag
+            end
+        end)
+    end
+end)
